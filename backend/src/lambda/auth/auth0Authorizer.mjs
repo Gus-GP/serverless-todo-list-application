@@ -4,7 +4,7 @@ import { createLogger } from '../../utils/logger.mjs'
 
 const logger = createLogger('auth')
 
-const jwksUrl = 'https://test-endpoint.auth0.com/.well-known/jwks.json'
+const jwksUrl = 'https://dev-3h5xwckw0u5te1qx.us.auth0.com/.well-known/jwks.json'
 
 export async function handler(event) {
   try {
@@ -45,9 +45,23 @@ export async function handler(event) {
 async function verifyToken(authHeader) {
   const token = getToken(authHeader)
   const jwt = jsonwebtoken.decode(token, { complete: true })
-
   // TODO: Implement token verification
-  return undefined;
+  //request JSON web key set from auth0 deployed service
+  const response = await Axios.get(jwksUrl);
+  // The logic below is prescribed by https://auth0.com/blog/navigating-rs256-and-jwks/
+  // especifically the "Finding the exact signature verification key" section
+  const keys = res.data.keys;
+  const signKeys = keys.find(key => key.kid === jwt.header.kid);
+  if (!signKeys) {
+    logger.error('the JWT supplied with the request was signed with a key that is not supported by Auth0')
+    throw new Error("Incorrect Keys");
+  }
+  //retireve the the x509 certificate chain
+  const certificate = signKeys.x5c[0];
+  //wrap in header and footer
+  certificate = `-----BEGIN CERTIFICATE-----\n${certificate}\n-----END CERTIFICATE-----\n`;
+  
+  return jsonwebtoken.verify(token, certificate, {algorithms: ['RS256']});
 }
 
 function getToken(authHeader) {
