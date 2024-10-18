@@ -13,7 +13,7 @@ export async function getTodos(idToken) {
     }
   )
   console.log('Todos:', response.data)
-  return response.data.items
+  return response.data.todos
 }
 
 export async function createTodo(idToken, newTodo) {
@@ -27,7 +27,7 @@ export async function createTodo(idToken, newTodo) {
       }
     }
   )
-  return response.data.item
+  return response.data.todo
 }
 
 export async function patchTodo(idToken, todoId, updatedTodo) {
